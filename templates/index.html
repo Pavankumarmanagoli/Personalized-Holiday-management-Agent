@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Holiday Planner</title>
+    <style>
+        :root {
+            color-scheme: light;
+            --bg: #f4f7fb;
+            --panel: #ffffff;
+            --panel-border: #dde5ef;
+            --text: #152033;
+            --muted: #637083;
+            --brand: #147a73;
+            --brand-strong: #0f5f59;
+            --user: #147a73;
+            --assistant: #ffffff;
+            --error: #b42318;
+            --shadow: 0 18px 45px rgba(26, 39, 66, 0.12);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background:
+                radial-gradient(circle at top left, rgba(20, 122, 115, 0.12), transparent 30rem),
+                var(--bg);
+            color: var(--text);
+        }
+
+        .app {
+            min-height: 100vh;
+            display: grid;
+            grid-template-rows: auto 1fr auto;
+        }
+
+        .header {
+            padding: 22px clamp(18px, 4vw, 44px);
+            border-bottom: 1px solid rgba(221, 229, 239, 0.8);
+            background: rgba(255, 255, 255, 0.78);
+            backdrop-filter: blur(16px);
+            position: sticky;
+            top: 0;
+            z-index: 5;
+        }
+
+        .header-inner {
+            max-width: 920px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .logo {
+            width: 42px;
+            height: 42px;
+            border-radius: 14px;
+            display: grid;
+            place-items: center;
+            background: var(--brand);
+            color: #ffffff;
+            font-weight: 800;
+            letter-spacing: 0;
+            flex: 0 0 auto;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(1.35rem, 4vw, 1.9rem);
+            line-height: 1.15;
+            letter-spacing: 0;
+        }
+
+        .subtitle {
+            margin: 3px 0 0;
+            color: var(--muted);
+            font-size: 0.95rem;
+        }
+
+        .chat {
+            width: min(920px, 100%);
+            margin: 0 auto;
+            padding: 28px clamp(14px, 3vw, 28px) 18px;
+            overflow-y: auto;
+        }
+
+        .empty-state {
+            min-height: 48vh;
+            display: grid;
+            place-items: center;
+            text-align: center;
+            color: var(--muted);
+            padding: 24px;
+        }
+
+        .empty-card {
+            max-width: 560px;
+            background: rgba(255, 255, 255, 0.68);
+            border: 1px solid rgba(221, 229, 239, 0.9);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            padding: clamp(22px, 5vw, 34px);
+        }
+
+        .empty-card h2 {
+            margin: 0 0 10px;
+            color: var(--text);
+            font-size: clamp(1.35rem, 5vw, 2rem);
+            letter-spacing: 0;
+        }
+
+        .empty-card p {
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .message {
+            display: flex;
+            gap: 12px;
+            margin: 0 0 20px;
+            animation: fadeIn 180ms ease-out;
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            font-size: 0.78rem;
+            font-weight: 800;
+            flex: 0 0 auto;
+            background: #e6edf5;
+            color: var(--muted);
+        }
+
+        .message.user .avatar {
+            order: 2;
+            background: var(--brand);
+            color: #ffffff;
+        }
+
+        .bubble {
+            max-width: min(720px, calc(100% - 46px));
+            padding: 14px 16px;
+            border-radius: 8px;
+            line-height: 1.55;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            box-shadow: 0 8px 20px rgba(26, 39, 66, 0.08);
+        }
+
+        .message.user .bubble {
+            background: var(--user);
+            color: #ffffff;
+            border-top-right-radius: 3px;
+        }
+
+        .message.assistant .bubble {
+            background: var(--assistant);
+            border: 1px solid var(--panel-border);
+            border-top-left-radius: 3px;
+        }
+
+        .message.error .bubble {
+            color: var(--error);
+            border-color: rgba(180, 35, 24, 0.25);
+            background: #fff7f6;
+        }
+
+        .composer-wrap {
+            padding: 14px clamp(14px, 3vw, 28px) 24px;
+            background: linear-gradient(180deg, rgba(244, 247, 251, 0), var(--bg) 32%);
+        }
+
+        .composer {
+            width: min(920px, 100%);
+            margin: 0 auto;
+            background: var(--panel);
+            border: 1px solid var(--panel-border);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            padding: 10px;
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 48px;
+            max-height: 160px;
+            resize: none;
+            border: 0;
+            outline: 0;
+            padding: 13px 10px;
+            font: inherit;
+            line-height: 1.45;
+            color: var(--text);
+            background: transparent;
+        }
+
+        textarea::placeholder {
+            color: #8a96a8;
+        }
+
+        button {
+            width: 46px;
+            height: 46px;
+            border: 0;
+            border-radius: 8px;
+            background: var(--brand);
+            color: #ffffff;
+            display: grid;
+            place-items: center;
+            cursor: pointer;
+            flex: 0 0 auto;
+            transition: background 140ms ease, transform 140ms ease, opacity 140ms ease;
+        }
+
+        button:hover:not(:disabled) {
+            background: var(--brand-strong);
+            transform: translateY(-1px);
+        }
+
+        button:disabled {
+            cursor: not-allowed;
+            opacity: 0.55;
+        }
+
+        .send-icon {
+            width: 19px;
+            height: 19px;
+            fill: currentColor;
+        }
+
+        .typing {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            height: 22px;
+        }
+
+        .typing span {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #8a96a8;
+            animation: pulse 1s infinite ease-in-out;
+        }
+
+        .typing span:nth-child(2) {
+            animation-delay: 120ms;
+        }
+
+        .typing span:nth-child(3) {
+            animation-delay: 240ms;
+        }
+
+        @keyframes pulse {
+            0%, 80%, 100% { opacity: 0.35; transform: translateY(0); }
+            40% { opacity: 1; transform: translateY(-3px); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 640px) {
+            .header {
+                padding: 16px 14px;
+            }
+
+            .subtitle {
+                display: none;
+            }
+
+            .chat {
+                padding-top: 18px;
+            }
+
+            .empty-state {
+                min-height: 42vh;
+                padding-inline: 0;
+            }
+
+            .message {
+                gap: 8px;
+                margin-bottom: 16px;
+            }
+
+            .avatar {
+                width: 30px;
+                height: 30px;
+            }
+
+            .bubble {
+                max-width: calc(100% - 38px);
+                padding: 12px 13px;
+                font-size: 0.95rem;
+            }
+
+            .composer-wrap {
+                padding-bottom: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="app">
+        <header class="header">
+            <div class="header-inner">
+                <div class="logo" aria-hidden="true">HP</div>
+                <div>
+                    <h1>Holiday Planner</h1>
+                    <p class="subtitle">Plan trips with your holiday management agent.</p>
+                </div>
+            </div>
+        </header>
+
+        <section id="chat" class="chat" aria-live="polite">
+            <div id="emptyState" class="empty-state">
+                <div class="empty-card">
+                    <h2>Where would you like to go?</h2>
+                    <p>Ask for an itinerary, destination ideas, budgets, activities, or a complete holiday plan.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="composer-wrap">
+            <form id="plannerForm" class="composer">
+                <textarea
+                    id="userInput"
+                    rows="1"
+                    placeholder="Message Holiday Planner..."
+                    autocomplete="off"
+                    required
+                ></textarea>
+                <button id="sendButton" type="submit" aria-label="Send travel request">
+                    <svg class="send-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M2.4 20.7 22 12 2.4 3.3 2 10l12 2-12 2 .4 6.7Z"></path>
+                    </svg>
+                </button>
+            </form>
+        </section>
+    </main>
+
+    <script>
+        const chat = document.getElementById("chat");
+        const emptyState = document.getElementById("emptyState");
+        const form = document.getElementById("plannerForm");
+        const input = document.getElementById("userInput");
+        const sendButton = document.getElementById("sendButton");
+
+        function sanitizeResponse(text) {
+            return String(text || "").replace(/\bTERMINATE\b/g, "").trim();
+        }
+
+        function scrollToLatest() {
+            chat.scrollTo({ top: chat.scrollHeight, behavior: "smooth" });
+        }
+
+        function resizeInput() {
+            input.style.height = "auto";
+            input.style.height = `${Math.min(input.scrollHeight, 160)}px`;
+        }
+
+        function createMessage(role, content, options = {}) {
+            emptyState?.remove();
+
+            const message = document.createElement("article");
+            message.className = `message ${role}${options.error ? " error" : ""}`;
+
+            const avatar = document.createElement("div");
+            avatar.className = "avatar";
+            avatar.textContent = role === "user" ? "You" : "AI";
+
+            const bubble = document.createElement("div");
+            bubble.className = "bubble";
+
+            if (options.loading) {
+                bubble.innerHTML = '<span class="typing" aria-label="Loading"><span></span><span></span><span></span></span>';
+            } else {
+                bubble.textContent = content;
+            }
+
+            message.append(avatar, bubble);
+            chat.appendChild(message);
+            scrollToLatest();
+            return message;
+        }
+
+        function extractAssistantReply(data) {
+            const messages = Array.isArray(data.messages) ? data.messages : [];
+            const visibleMessages = messages
+                .map((message) => sanitizeResponse(message.content))
+                .filter(Boolean);
+
+            return visibleMessages.at(-1) || "No response content was returned.";
+        }
+
+        async function sendPlan(content) {
+            createMessage("user", content);
+            const loadingMessage = createMessage("assistant", "", { loading: true });
+            sendButton.disabled = true;
+            input.disabled = true;
+
+            try {
+                const response = await fetch("/plan", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ content })
+                });
+
+                let data = {};
+                try {
+                    data = await response.json();
+                } catch {
+                    data = {};
+                }
+
+                if (!response.ok) {
+                    const detail = data.detail ? ` ${data.detail}` : "";
+                    throw new Error(`Unable to create a holiday plan.${detail}`);
+                }
+
+                loadingMessage.remove();
+                createMessage("assistant", extractAssistantReply(data));
+            } catch (error) {
+                loadingMessage.remove();
+                createMessage("assistant", error.message || "Something went wrong while contacting the planner.", { error: true });
+            } finally {
+                sendButton.disabled = false;
+                input.disabled = false;
+                input.focus();
+                resizeInput();
+            }
+        }
+
+        input.addEventListener("input", resizeInput);
+        input.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                form.requestSubmit();
+            }
+        });
+
+        form.addEventListener("submit", (event) => {
+            event.preventDefault();
+            const content = input.value.trim();
+            if (!content || sendButton.disabled) return;
+
+            input.value = "";
+            resizeInput();
+            sendPlan(content);
+        });
+
+        resizeInput();
+    </script>
+</body>
+</html>
